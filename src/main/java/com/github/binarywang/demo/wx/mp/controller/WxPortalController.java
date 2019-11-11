@@ -1,24 +1,14 @@
 package com.github.binarywang.demo.wx.mp.controller;
 
+import com.github.binarywang.demo.wx.mp.utils.TulingApiUtil;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.mp.api.WxMpMessageRouter;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import me.chanjar.weixin.mp.api.WxMpService;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlMessage;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author Binary Wang(https://github.com/binarywang)
@@ -77,30 +67,27 @@ public class WxPortalController {
         }
 
         String out = null;
+        String returnMsg = null;
         if (encType == null) {
             // 明文传输的消息
             WxMpXmlMessage inMessage = WxMpXmlMessage.fromXml(requestBody);
-            WxMpXmlOutMessage outMessage = this.route(inMessage);
-            if (outMessage == null) {
-                return "";
+            //WxMpXmlOutMessage outMessage = this.route(inMessage);
+            if (inMessage != null) {
+                // out = outMessage.toXml();
+                returnMsg = TulingApiUtil.getTulingResult(inMessage.getContent());
             }
-
-            out = outMessage.toXml();
         } else if ("aes".equalsIgnoreCase(encType)) {
             // aes加密的消息
             WxMpXmlMessage inMessage = WxMpXmlMessage.fromEncryptedXml(requestBody, wxService.getWxMpConfigStorage(),
                 timestamp, nonce, msgSignature);
-            log.debug("\n消息解密后内容为：\n{} ", inMessage.toString());
-            WxMpXmlOutMessage outMessage = this.route(inMessage);
-            if (outMessage == null) {
-                return "";
+            log.info("\n消息解密后内容为：\n{} ", inMessage.toString());
+            // WxMpXmlOutMessage outMessage = this.route(inMessage);
+            if (inMessage != null) {
+                //   out = outMessage.toEncryptedXml(wxService.getWxMpConfigStorage());
+                returnMsg = TulingApiUtil.getTulingResult(inMessage.getContent());
             }
-
-            out = outMessage.toEncryptedXml(wxService.getWxMpConfigStorage());
         }
-
-        log.debug("\n组装回复信息：{}", out);
-        return out;
+        return returnMsg;
     }
 
     private WxMpXmlOutMessage route(WxMpXmlMessage message) {
